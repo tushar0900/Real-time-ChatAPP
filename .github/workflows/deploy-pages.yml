@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      VITE_API_BASE_URL: https://real-time-chatapp-o0me.onrender.com
     steps:
       - name: Checkout
         uses: actions/checkout@v4
