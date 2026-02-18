@@ -13,6 +13,8 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -116,30 +118,52 @@ function Signup({ onSignupSuccess, onSwitchToLogin }) {
 
         <div className="form-group">
           <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            name="password"
-            placeholder="********"
-            value={data.password}
-            onChange={handleChange}
-            autoComplete="new-password"
-            required
-          />
+          <div className="password-field">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="********"
+              value={data.password}
+              onChange={handleChange}
+              autoComplete="new-password"
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((previous) => !previous)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
         </div>
 
         <div className="form-group">
           <label htmlFor="confirm">Confirm Password</label>
-          <input
-            id="confirm"
-            type="password"
-            name="confirm"
-            placeholder="********"
-            value={data.confirm}
-            onChange={handleChange}
-            autoComplete="new-password"
-            required
-          />
+          <div className="password-field">
+            <input
+              id="confirm"
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirm"
+              placeholder="********"
+              value={data.confirm}
+              onChange={handleChange}
+              autoComplete="new-password"
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowConfirmPassword((previous) => !previous)}
+              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+              title={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+            >
+              {showConfirmPassword ? "Hide" : "Show"}
+            </button>
+          </div>
         </div>
 
         {error && <div className="error-message">{error}</div>}

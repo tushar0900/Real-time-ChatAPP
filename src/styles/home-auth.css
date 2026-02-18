@@ -125,6 +125,46 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-light) 70%, transparent);
 }
 
+.container .password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.container .password-field input {
+  width: 100%;
+  padding-right: 4.2rem;
+}
+
+.container .password-toggle {
+  position: absolute;
+  right: 0.45rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid var(--input-border);
+  background: color-mix(in srgb, var(--glass-bg) 88%, transparent);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  min-height: 28px;
+  min-width: 56px;
+  padding: 0 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
+}
+
+.container .password-toggle:hover {
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--primary-color) 48%, white 52%);
+}
+
+.container .password-toggle:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--primary-color) 58%, white 42%);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-light) 50%, transparent);
+}
+
 .container .error-message {
   margin: 0;
   border-radius: 10px;
@@ -331,6 +371,17 @@
 
   .container .toggle {
     font-size: 0.86rem;
+  }
+
+  .container .password-field input {
+    padding-right: 4rem;
+  }
+
+  .container .password-toggle {
+    min-height: 26px;
+    min-width: 52px;
+    font-size: 0.72rem;
+    padding: 0 0.55rem;
   }
 
   .theme-toggle-btn {

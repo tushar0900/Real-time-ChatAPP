@@ -12,6 +12,7 @@ function Login({ onLoginSuccess, onSwitchToSignup }) {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -93,16 +94,27 @@ function Login({ onLoginSuccess, onSwitchToSignup }) {
 
         <div className="form-group">
           <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            name="password"
-            placeholder="********"
-            value={data.password}
-            onChange={handleChange}
-            autoComplete="current-password"
-            required
-          />
+          <div className="password-field">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="********"
+              value={data.password}
+              onChange={handleChange}
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((previous) => !previous)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              title={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
         </div>
 
         {error && <div className="error-message">{error}</div>}
