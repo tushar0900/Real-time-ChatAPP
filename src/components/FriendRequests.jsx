@@ -1,81 +1,122 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
+import { getAuthSession } from "../utils/authSession";
 import "./FriendRequests.css";
+
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5000").replace(
+  /\/$/,
+  "",
+);
+const POLL_INTERVAL_MS = 5000;
 
 function FriendRequests({ currentUserId, onRequestStatusChange }) {
   const [receivedRequests, setReceivedRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
-  const [activeTab, setActiveTab] = useState("received"); // "received" or "sent"
+  const [activeTab, setActiveTab] = useState("received");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch all requests (received and sent)
-  const fetchRequests = async () => {
+  const getRequestConfig = () => {
+    const { token } = getAuthSession();
+    if (token) {
+      return {
+        timeout: 8000,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      };
+    }
+
+    return { timeout: 8000 };
+  };
+
+  const fetchRequests = useCallback(async () => {
+    if (!currentUserId) {
+      setReceivedRequests([]);
+      setSentRequests([]);
+      setError("");
+      return;
+    }
+
     setLoading(true);
     setError("");
+
     try {
       const followInfoRes = await axios.get(
-        `http://localhost:5000/api/users/${currentUserId}/follow-info`
+        `${API_BASE_URL}/api/users/${currentUserId}/follow-info`,
+        getRequestConfig(),
       );
 
-      setReceivedRequests(followInfoRes.data.receivedRequests || []);
-      setSentRequests(followInfoRes.data.sentRequests || []);
+      setReceivedRequests(followInfoRes.data?.receivedRequests || []);
+      setSentRequests(followInfoRes.data?.sentRequests || []);
     } catch (err) {
       console.error("Error fetching requests:", err);
-      setError("Failed to load requests");
+      const statusCode = err.response?.status;
+      const serverMessage = err.response?.data?.message;
+      if (serverMessage) {
+        setError(`${serverMessage}${statusCode ? ` (status ${statusCode})` : ""}`);
+      } else {
+        setError("Failed to load requests");
+      }
     } finally {
       setLoading(false);
     }
-  };
-
-  // Auto-fetch requests on mount and periodically
-  useEffect(() => {
-    if (currentUserId) {
-      fetchRequests();
-      const interval = setInterval(fetchRequests, 5000);
-      return () => clearInterval(interval);
-    }
   }, [currentUserId]);
 
-  // Accept request
+  useEffect(() => {
+    if (!currentUserId) {
+      return undefined;
+    }
+
+    fetchRequests();
+    const interval = setInterval(fetchRequests, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [currentUserId, fetchRequests]);
+
   const handleAccept = async (requesterId) => {
     try {
       await axios.post(
-        `http://localhost:5000/api/users/${currentUserId}/accept-follow/${requesterId}`
+        `${API_BASE_URL}/api/users/${currentUserId}/accept-follow/${requesterId}`,
+        {},
+        getRequestConfig(),
       );
-      setReceivedRequests(receivedRequests.filter(r => r._id !== requesterId));
+
+      setReceivedRequests((previous) => previous.filter((request) => request._id !== requesterId));
       onRequestStatusChange?.();
-      alert("✓ Follow request accepted!");
+      alert("Follow request accepted");
     } catch (err) {
       console.error("Error accepting request:", err);
       alert(err.response?.data?.message || "Failed to accept request");
     }
   };
 
-  // Reject request
   const handleReject = async (requesterId) => {
     try {
       await axios.post(
-        `http://localhost:5000/api/users/${currentUserId}/reject-follow/${requesterId}`
+        `${API_BASE_URL}/api/users/${currentUserId}/reject-follow/${requesterId}`,
+        {},
+        getRequestConfig(),
       );
-      setReceivedRequests(receivedRequests.filter(r => r._id !== requesterId));
-      alert("✗ Follow request rejected");
+
+      setReceivedRequests((previous) => previous.filter((request) => request._id !== requesterId));
+      alert("Follow request rejected");
     } catch (err) {
       console.error("Error rejecting request:", err);
       alert(err.response?.data?.message || "Failed to reject request");
     }
   };
 
-  // Cancel sent request
   const handleCancelRequest = async (targetUserId) => {
     try {
-      // Reject as if it's a received request from that user
       await axios.post(
-        `http://localhost:5000/api/users/${targetUserId}/reject-follow/${currentUserId}`
+        `${API_BASE_URL}/api/users/${targetUserId}/reject-follow/${currentUserId}`,
+        {},
+        getRequestConfig(),
       );
-      setSentRequests(sentRequests.filter(u => u._id !== targetUserId));
+
+      setSentRequests((previous) => previous.filter((user) => user._id !== targetUserId));
       onRequestStatusChange?.();
-      alert("✓ Follow request cancelled");
+      alert("Follow request cancelled");
     } catch (err) {
       console.error("Error cancelling request:", err);
       alert(err.response?.data?.message || "Failed to cancel request");
@@ -89,13 +130,13 @@ function FriendRequests({ currentUserId, onRequestStatusChange }) {
           className={`tab-btn ${activeTab === "received" ? "active" : ""}`}
           onClick={() => setActiveTab("received")}
         >
-          📬 Received ({receivedRequests.length})
+          Received ({receivedRequests.length})
         </button>
         <button
           className={`tab-btn ${activeTab === "sent" ? "active" : ""}`}
           onClick={() => setActiveTab("sent")}
         >
-          📤 Sent ({sentRequests.length})
+          Sent ({sentRequests.length})
         </button>
       </div>
 
@@ -107,7 +148,7 @@ function FriendRequests({ currentUserId, onRequestStatusChange }) {
         <div className="requests-list">
           {receivedRequests.length === 0 ? (
             <div className="empty-state">
-              <p>📭 No pending follow requests</p>
+              <p>No pending follow requests</p>
               <small>When someone sends you a follow request, it will appear here</small>
             </div>
           ) : (
@@ -126,14 +167,14 @@ function FriendRequests({ currentUserId, onRequestStatusChange }) {
                     onClick={() => handleAccept(requester._id)}
                     title="Accept follow request"
                   >
-                    ✓
+                    Accept
                   </button>
                   <button
                     className="reject-btn"
                     onClick={() => handleReject(requester._id)}
                     title="Reject follow request"
                   >
-                    ✕
+                    Reject
                   </button>
                 </div>
               </div>
@@ -144,7 +185,7 @@ function FriendRequests({ currentUserId, onRequestStatusChange }) {
         <div className="requests-list">
           {sentRequests.length === 0 ? (
             <div className="empty-state">
-              <p>📨 No pending sent requests</p>
+              <p>No pending sent requests</p>
               <small>Your follow requests will appear here until the recipient responds</small>
             </div>
           ) : (
@@ -163,7 +204,7 @@ function FriendRequests({ currentUserId, onRequestStatusChange }) {
                     onClick={() => handleCancelRequest(recipient._id)}
                     title="Cancel follow request"
                   >
-                    ✕
+                    Cancel
                   </button>
                 </div>
               </div>
