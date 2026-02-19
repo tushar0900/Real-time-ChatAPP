@@ -2773,6 +2773,9 @@ function ChatPage({ theme: propsTheme, setTheme: propsSetTheme }) {
                 className="chat-file-input"
                 onChange={handleFileSelected}
                 disabled={messageInputDisabled || isSendingAttachment}
+                hidden
+                tabIndex={-1}
+                accept=".pdf,.doc,.docx,.txt,.rtf,.odt,.xls,.xlsx,.ppt,.pptx,image/*"
               />
 
               <textarea

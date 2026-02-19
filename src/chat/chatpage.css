@@ -770,6 +770,67 @@ body {
   font-weight: 400;
 }
 
+.msg-attachment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.msg-attachment-image-link {
+  display: inline-flex;
+  width: fit-content;
+  max-width: min(320px, 62vw);
+  border-radius: 0.7rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.msg-attachment-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 260px;
+  object-fit: cover;
+}
+
+.msg-attachment-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.msg-attachment-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.msg-attachment-size {
+  font-size: 0.73rem;
+  opacity: 0.8;
+}
+
+.msg-attachment-download {
+  border: 1px solid var(--input-border);
+  border-radius: 999px;
+  padding: 0.22rem 0.58rem;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: inherit;
+  text-decoration: none;
+  background: color-mix(in srgb, var(--glass-bg) 84%, transparent);
+}
+
+.message.sent .msg-attachment-download {
+  border-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.msg-attachment-download:hover {
+  filter: brightness(1.08);
+}
+
 /* Input Area */
 .chat-input-area {
   padding: 0.95rem 1.25rem;
@@ -862,6 +923,16 @@ body {
   width: 40px;
   height: 40px;
   padding: 0;
+}
+
+.upload-file-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+.chat-file-input {
+  display: none;
 }
 
 .chat-input {
@@ -2486,6 +2557,11 @@ body {
   }
 
   .emoji-open-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .upload-file-btn {
     width: 36px;
     height: 36px;
   }

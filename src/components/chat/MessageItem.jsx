@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactionBar from "./ReactionBar";
 
 const LONG_PRESS_MS = 420;
+const ATTACHMENT_PAYLOAD_KIND = "chat_attachment";
 
 function getUserId(user) {
   if (!user) {
@@ -31,6 +32,51 @@ function buildReactionSummary(reactions, currentUserId) {
   return Array.from(aggregate.values());
 }
 
+function parseAttachmentPayload(rawContent) {
+  const text = String(rawContent || "").trim();
+  if (!text) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+    if (
+      !parsed ||
+      parsed.kind !== ATTACHMENT_PAYLOAD_KIND ||
+      typeof parsed.dataUrl !== "string"
+    ) {
+      return null;
+    }
+
+    return {
+      name: String(parsed.name || "attachment"),
+      mimeType: String(parsed.mimeType || ""),
+      size: Number(parsed.size) || 0,
+      dataUrl: parsed.dataUrl,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return "";
+  }
+
+  const units = ["B", "KB", "MB", "GB"];
+  let size = bytes;
+  let unitIndex = 0;
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+
+  const precision = size >= 10 || unitIndex === 0 ? 0 : 1;
+  return `${size.toFixed(precision)} ${units[unitIndex]}`;
+}
+
 function getMessageTextPreview(content, maxLength = 120) {
   const text = String(content || "").trim();
   if (!text) {
@@ -55,6 +101,27 @@ function MessageItem({ message, currentUserId, onReact, onOpenSenderProfile, onR
   const replyMessage = message.replyTo && typeof message.replyTo === "object" ? message.replyTo : null;
   const replySenderId = getUserId(replyMessage?.senderUserId);
   const replySenderName = replySenderId === currentUserId ? "You" : replyMessage?.senderUserId?.username || "Unknown";
+  const attachmentPayload = useMemo(() => {
+    if (message.messageType !== "image" && message.messageType !== "file") {
+      return null;
+    }
+
+    return parseAttachmentPayload(message.messageContent);
+  }, [message.messageContent, message.messageType]);
+  const isImageAttachment = Boolean(attachmentPayload?.mimeType?.startsWith("image/"));
+  const attachmentSizeLabel = useMemo(
+    () => formatFileSize(attachmentPayload?.size || 0),
+    [attachmentPayload?.size],
+  );
+  const replyPreviewText = useMemo(() => {
+    const replyAttachment = parseAttachmentPayload(replyMessage?.messageContent);
+    if (replyAttachment) {
+      const label = replyAttachment.mimeType?.startsWith("image/") ? "Image" : "File";
+      return `${label}: ${replyAttachment.name}`;
+    }
+
+    return getMessageTextPreview(replyMessage?.messageContent, 90);
+  }, [replyMessage?.messageContent]);
 
   const myReaction = useMemo(() => {
     return (message.reactions || []).find((reaction) => getUserId(reaction.user) === currentUserId)?.emoji || null;
@@ -166,10 +233,44 @@ function MessageItem({ message, currentUserId, onReact, onOpenSenderProfile, onR
         {replyMessage && (
           <div className="msg-reply-quote" aria-label={`Reply to ${replySenderName}`}>
             <span className="msg-reply-sender">{replySenderName}</span>
-            <span className="msg-reply-text">{getMessageTextPreview(replyMessage.messageContent, 90)}</span>
+            <span className="msg-reply-text">{replyPreviewText}</span>
           </div>
         )}
-        {message.messageContent}
+        {attachmentPayload ? (
+          <div className={`msg-attachment ${isImageAttachment ? "image" : "file"}`}>
+            {isImageAttachment && (
+              <a
+                className="msg-attachment-image-link"
+                href={attachmentPayload.dataUrl}
+                download={attachmentPayload.name}
+                aria-label={`Open ${attachmentPayload.name}`}
+              >
+                <img
+                  src={attachmentPayload.dataUrl}
+                  alt={attachmentPayload.name}
+                  className="msg-attachment-image"
+                  loading="lazy"
+                />
+              </a>
+            )}
+
+            <div className="msg-attachment-meta">
+              <span className="msg-attachment-name">{attachmentPayload.name}</span>
+              {attachmentSizeLabel && (
+                <span className="msg-attachment-size">{attachmentSizeLabel}</span>
+              )}
+              <a
+                className="msg-attachment-download"
+                href={attachmentPayload.dataUrl}
+                download={attachmentPayload.name}
+              >
+                Download
+              </a>
+            </div>
+          </div>
+        ) : (
+          message.messageContent
+        )}
         <span className="msg-time">
           {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
         </span>
