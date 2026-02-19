@@ -303,6 +303,7 @@ body {
 .list-item {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
   padding: 0.85rem 1rem;
   border-radius: var(--radius-lg);
   margin: 0 0.5rem 0.25rem;
@@ -2678,6 +2679,7 @@ body {
   }
 
   .list-item {
+    gap: 0.6rem;
     padding: 0.7rem 0.75rem;
     margin: 0 0.35rem 0.2rem;
   }
